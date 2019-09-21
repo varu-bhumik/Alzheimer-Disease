@@ -1,0 +1,61 @@
+Before applying any pre-processing step to our data, Images were converted to Neuroimaging Informatics Technology Initiative (NIfTI)
+file format using Ubuntu’s built-in medical data format conversion called miconv to make them suitable for pre-processing.
+
+To convert abc.dcm to abc.nii, one can simply type miconv abc.dcm abc.nii in the command line.
+
+To remove unnecessary details of brain MR images that might cause poor training of our classification model, cortical reconstruction 
+and volumetric segmentation was performed with the FreeSurfer image analysis suite, which is documented and freely available for download 
+online (http://surfer.nmr.mgh.harvard.edu/). 
+Specifically, recon-all autorecon1 was used, that performs only 5 out of 31 transformation processes of recon-all. 
+The 5 processes are: 
+1. Motion Correction and conform;
+2. Non-Uniform intensity normalization (NU);
+3. Talairach transform computation;
+4. Intensity normalization; and
+5. Skull Stripping. 
+
+
+Each process takes place one after other in order described above and outputs compressed image in .mgz file format that can be found in
+mri folder of subject’s directory. 
+
+brainmask.mgz and brainmask.auto.mgz are the final output files that were obtained after all 5 processes are finished.  
+
+
+brainmask.auto.mgz file of each subject’s is extracted and further converted to NIfTI file format using FreeSurfer’s utility mri_convert
+for further processing. 
+
+
+NIfTI images are volumetric (3D) images, therefore output images that we have till now are all of size 256 × 256 × 256.
+These images comprise of 2D images called slices. Hence, we have 256 slices corresponding to each NIfTI image. 
+These slices can be extracted as individual images (in PNG file format) using miconv. 
+
+Slices were extracted in axial plane using command: miconv –reslice axial abc.nii abc.png in command line.  
+
+
+Even though we can use all 256 slices corresponding to each of the 150 subjects for training model, but choosing the best possible 
+data can certainly improve the chances of success of model. A set of slices are extracted at random by assuming that these slices
+contains most relevant information. Instead of extracting slices at random, image entropy based sorting mechanism is used to take 
+most informative slices in which image entropy for each slice was calculated and top 32 slices based on entropy value were selected
+of each subject and rest of the slices were discarded.
+
+
+In final step of processing, all slices were first cropped to 200 × 200 size. After this, since slices are grayscale hence 1-channel 
+images, they were further converted to 3-channel using scikit-image library that eventually results in image size: 200 × 200 × 3. 
+
+
+CNN is used as feature extractor i.e. CNN architecture, VGG16 pre-trained on ImageNet dataset is taken as base model from which last
+fully-connected layers are removed (since the outputs of those layers are 1000 class scores for classification task on ImageNet),
+and the rest of the convolutional layers are used as feature extractor for our dataset.
+
+
+Note that, by default while loading model using Keras all parameters are set as trainable. 
+include_top = False is the argument that is specifically used to not include fullyconnected layers while loading the model.
+
+
+VGG16 was trained on RGB i.e. 3 channel images of size 224 × 224 × 3 and hence accepts input only if it has exactly 3 channels.
+Also width and height of image should be no smaller than 48. Therefore, 200 × 200 × 3 would be a valid input size for the model. 
+Since, fully-connected layers, also called as dense layers were removed from the base model, Before adding any layers, output 
+of the last convolutional layer is flattened into one column vector of size 18432, after this new fully-connected layers are added 
+at the end of base model: first layer consists of 256 neurons or units, second layer is the dropout layer with dropout ratio 0.5 and
+at the end is the softmax layer (output layer) that outputs 3 class scores for 3-way classification. 
+
