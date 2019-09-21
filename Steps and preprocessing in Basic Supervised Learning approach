@@ -1,0 +1,24 @@
+This is a simpler and easier approach as compared to the transfer learning approach.
+
+After downloading the images from Alzheimer’s disease Neuroimaging Initiative (ADNI) database, we have pre-processed data from the free surfer software,
+which is freely available for download. We have done processing of the MRI images by the recon-all command.  Which is used for the feature extraction of the images which we provide.  
+
+The way of using recon-all command is as follows:  
+ls *.nii | parallel –jobs 36 recon-all –s {.} –i{} –all –qcache  
+
+After having pre-processed data using free surfer software, the features had been extracted from the pre-processed images. I used two free surfer commands for extracting information. 
+These two commands will return the csv files or text files of numeric data, these two commands as listed below:  
+
+1.	asegstats2tableasegstats2table --subjects subject1 subject2 subject3......--tablefile aseg_stats.txt          
+It returns the volumetric data from different cortical structures of the brain.   
+
+
+2.	aparcstats2tableaparcstats2table --subjects subject1 subject2 subject3 ......---hemi lh tablefile aseg_stats.txt  
+It returns the area or thickness data from different subcortical structures of left part of the brain.  
+
+3.	aparcstats2table --subjects subject1 subject2 subject3 ......---hemi rh tablefile aseg_stats.txt  
+It returns the area or thickness data from different subcortical structures of right part of the  brain.
+
+Having the highly co-related variables in the input feature vector doesn’t improve the performance of the model,
+and in turn might require much greater time for the model training and might lead to the overfitting.  
+Co-relation plot between the set of input features was developed to find the co-relation between them, so that we can reduce the size of input feature vector. It was realised that dropping of the correlated feature lead to reduction in the performance of the model. Hence all the features of the input dataset were retained to get the maximum performance.  
